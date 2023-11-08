@@ -1,6 +1,6 @@
 <?php
 
-namespace oblegation\container\MaritimeInterface;
+namespace oblegation\container\interface;
 
 use oblegation\container\vessel\ApplicationVessel;
 use oblegation\container\vessel\WebApplicationVessel;

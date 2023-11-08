@@ -2,7 +2,7 @@
 
 namespace oblegation\container;
 
-use oblegation\container\MaritimeInterface\MaritimeInterface;
+use oblegation\container\interface\MaritimeInterface;
 use oblegation\container\vessel\ApplicationVessel;
 use oblegation\container\vessel\WebApplicationVessel;
 

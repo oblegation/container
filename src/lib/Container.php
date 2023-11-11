@@ -2,12 +2,20 @@
 
 namespace oblegation\container\lib;
 
+use oblegation\container\ioc\ProxyExecutor;
 use oblegation\container\lib\interface\ContainerInterface;
+use oblegation\container\vessel\Interface\VesselInterface;
 use ReflectionFunction;
 use Throwable;
 
 class Container implements ContainerInterface
 {
+    private ProxyExecutor $proxyExecutor;
+
+    public function __construct(VesselInterface $vessel)
+    {
+        $this->proxyExecutor = new ProxyExecutor($vessel);
+    }
 
     /**
      * @param string $containerId
@@ -23,12 +31,12 @@ class Container implements ContainerInterface
             }else{
                 return null;
             }
-        }
-
-        if ($containerVessel[$containerId] instanceof $configDocument[$containerId]["class"]){
-            return $containerVessel[$containerId];
         }else{
-            return null;
+            if ($containerVessel[$containerId] instanceof $configDocument[$containerId]["class"]){
+                return $containerVessel[$containerId];
+            }else{
+                return null;
+            }
         }
     }
 
@@ -40,7 +48,6 @@ class Container implements ContainerInterface
      */
     private function loadContainer(string $containerId, array &$containerVessel, array &$configDocument):bool
     {
-
         if(array_key_exists($containerId, $configDocument)){
 
             $document = $configDocument[$containerId];
@@ -58,20 +65,34 @@ class Container implements ContainerInterface
 
                     $type = $parameter->getType();
 
-                    if (array_key_exists($id, $containerVessel) || $containerVessel[$id] instanceof $type){
+                    if (array_key_exists($id, $containerVessel)){
 
-                        $args[$id] = $containerVessel[$id];
+                        if ($containerVessel[$id]::class == $type){
+
+                            $args[$id] = $containerVessel[$id];
+                        }else{
+                            return false;
+                        }
 
                     }elseif (array_key_exists($id, $configDocument)){
 
-                        $this->loadContainer($id, $containerVessel, $configDocument);
+                        if ($this->loadContainer($id,$containerVessel, $configDocument)){
 
+                            if ($containerVessel[$id]::class == $type){
+
+                                $args[$id] = $containerVessel[$id];
+                            }else{
+                                return false;
+                            }
+                        }else {
+                            return false;
+                        }
                     }else{
                         return false;
                     }
                 }
 
-                $containerVessel[$containerId] = $builder->invokeArgs($args);
+                $containerVessel[$containerId] = $this->proxyExecutor->getProxyInstance($builder->invokeArgs($args));
             }catch (Throwable){
                 return false;
             }
@@ -93,5 +114,34 @@ class Container implements ContainerInterface
         }else{
             return false;
         }
+    }
+
+    /**
+     * @param string $containerId
+     * @param array $containerVessel
+     * @param array $configDocument
+     * @return bool
+     */
+    public function injectContainer(string $containerId, array &$containerVessel, array &$configDocument): bool
+    {
+        if ($this->getApplicationContainer($containerId,$containerVessel,$configDocument) != null){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    /**
+     * @param array $containerVessel
+     * @param string $containerId
+     * @return bool
+     */
+    public function removeContainer(string $containerId, array &$containerVessel): bool
+    {
+        if (array_key_exists($containerId, $containerVessel)){
+            unset($containerVessel[$containerId]);
+            return true;
+        }
+        return false;
     }
 }

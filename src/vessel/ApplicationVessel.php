@@ -3,7 +3,7 @@
 namespace oblegation\container\vessel;
 
 use oblegation\container\lib\Container;
-use oblegation\container\vessel\vesselInterface\vesselInterface;
+use oblegation\container\vessel\Interface\vesselInterface;
 
 class ApplicationVessel implements VesselInterface
 {
@@ -20,14 +20,14 @@ class ApplicationVessel implements VesselInterface
 
         $this->configDocument = $configDocument;
 
-        $this->container = new Container();
+        $this->container = new Container($this);
     }
 
     /**
      * @param string $containerId
-     * @return object
+     * @return object|null
      */
-    public function getContainer(string $containerId): object
+    public function getContainer(string $containerId): object | null
     {
         return $this->container->getApplicationContainer($containerId, $this->containerVessel, $this->configDocument);
     }
